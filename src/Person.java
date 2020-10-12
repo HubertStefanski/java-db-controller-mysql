@@ -13,7 +13,7 @@ public class Person {
         this.gender = gender;
     }
 
-    public String getSalary() {
+    public int getSalary() {
         return salary;
     }
 
