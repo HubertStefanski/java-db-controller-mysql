@@ -1,2 +1,2 @@
-# strap
-Shift TRacking APp
+#  java-db-controller-mysql
+ A simple database controller for mysql
