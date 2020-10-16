@@ -14,7 +14,7 @@ public class Person {
     }
 
     public int getSalary() {
-        return salary;
+        return Integer.parseInt(salary);
     }
 
     public void setSalary(final String salary) {
