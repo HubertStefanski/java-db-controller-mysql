@@ -16,7 +16,7 @@ public class MenuDriver {
 
     public static void run(String[] args) throws Exception {
 
-        init();
+//        init();
         JFrame frame = new JFrame("MainMenu");
         JTable locTable = mainMenu.getPersonTable();
         locTable = mainMenu.FillTable(locTable);

@@ -66,22 +66,22 @@ public class MainMenu {
             Connection conn = MenuDriver.invokeConnection();
             Statement stat = conn.createStatement();
 
-            ResultSet rs = stat.executeQuery("SELECT fname,lname,ssnno,salary,gender from PERSON");
+            ResultSet rs = stat.executeQuery("SELECT * from PERSON");
 
 // Loop through the ResultSet and transfer in the Model
             java.sql.ResultSetMetaData rsmd = rs.getMetaData();
             int colNo = rsmd.getColumnCount();
             while (rs.next()) {
                 Object[] objects = new Object[colNo];
-                // tanks to umit ozkan for the bug fix!
                 for (int i = 0; i < colNo; i++) {
                     objects[i] = rs.getObject(i + 1);
                 }
                 aModel.addRow(objects);
-                rs.close();
-                stat.close();
-                conn.close();
+
             }
+            rs.close();
+            stat.close();
+            conn.close();
         } catch (SQLException e) {
             System.out.println(e);
         }
