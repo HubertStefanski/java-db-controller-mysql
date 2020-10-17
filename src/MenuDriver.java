@@ -1,4 +1,6 @@
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,12 +11,11 @@ import java.util.Vector;
 
 public class MenuDriver {
 
-
+    private static int selectedID = Integer.MAX_VALUE;
     private static String connectionUrl = "jdbc:mysql://localhost:3306/test";
     private static String createTableStatement = "CREATE TABLE PERSON(id INTEGER not NULL,fname VARCHAR(255),lname VARCHAR(255),salary INTEGER,ssnno VARCHAR(255),gender VARCHAR(255),PRIMARY KEY ( id ))";
     private static String populateTableStatement = "INSERT INTO PERSON VALUES(1, 'Ada', 'Kelly', 30000,'123456789','M');";
     private static MainMenu mainMenu = new MainMenu();
-    private static JTable table = new JTable();
 
 
     public static void run(String[] args) throws Exception {
@@ -23,9 +24,21 @@ public class MenuDriver {
         refreshTable();
         JFrame frame = new JFrame("MainMenu");
 
+        mainMenu.getPersonTable().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent event) {
+                if (mainMenu.getPersonTable() != null && mainMenu.getPersonTable().getModel().getRowCount() > 0) {
+                    JTable table = mainMenu.getPersonTable();
+                    selectedID = (int) table.getValueAt(table.getSelectedRow(),0);
+                    mainMenu.getFname().setText(table.getValueAt(table.getSelectedRow(), 1).toString());
+                    mainMenu.getLname().setText(table.getValueAt(table.getSelectedRow(), 2).toString());
+                    mainMenu.getSsnno().setText(table.getValueAt(table.getSelectedRow(), 3).toString());
+                    mainMenu.getSalary().setText(table.getValueAt(table.getSelectedRow(), 4).toString());
+                    mainMenu.getGender().setText(table.getValueAt(table.getSelectedRow(), 5).toString());
 
 
-
+                }
+            }
+        });
         mainMenu.getSaveButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -36,7 +49,7 @@ public class MenuDriver {
                 String salary = mainMenu.getSalary().getText();
                 String gender = mainMenu.getGender().getText();
 
-                Person locPerson = new Person(fname, lname, ssnno, salary, gender);
+                Person locPerson = new Person(gender, salary, ssnno, lname, fname);
                 System.out.println("Creating new person" + locPerson);
                 try {
                     create(locPerson, invokeConnection());
@@ -46,9 +59,29 @@ public class MenuDriver {
             }
             //your actions
         });
-        mainMenu.getSaveButton();
+        mainMenu.getUpdateButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                String fname = mainMenu.getFname().getText();
+                String lname = mainMenu.getLname().getText();
+                String ssnno = mainMenu.getSsnno().getText();
+                String salary = mainMenu.getSalary().getText();
+                String gender = mainMenu.getGender().getText();
+
+                Person locPerson = new Person(gender, salary, ssnno, lname, fname);
+                System.out.println("Updating person " + locPerson);
+                try {
+                    update(locPerson);
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
+            }
+
+
+            //your actions
+        });
         frame.setContentPane(mainMenu.UIView);
-//        mainMenu.FillTable(mainMenu.getPersonTable());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
@@ -57,16 +90,16 @@ public class MenuDriver {
     }
 
 
-    private static JTable refreshTable() throws SQLException {
+    private static void refreshTable() throws SQLException {
+
+        DefaultTableModel model = (DefaultTableModel) mainMenu.getPersonTable().getModel();
+        model.setRowCount(0);
         JTable newTable;
         JTable locTable = mainMenu.getPersonTable();
         locTable = mainMenu.FillTable(locTable);
         mainMenu.setPersonTable(locTable);
 
         ResultSet rs = readAll();
-        newTable = new JTable(buildTableModel(rs));
-        return newTable;
-
     }
 
     public static java.sql.Connection invokeConnection() throws SQLException {
@@ -135,17 +168,17 @@ public class MenuDriver {
     }
 
 
-    public static String create(Person person, Connection con) {
+    public static void create(Person person, Connection con) throws SQLException {
 
         Statement stmnt = null;
         Random rand = new Random(); //instance of random class
 
-        int locID = rand.nextInt();
+        int locID = rand.nextInt(101);
         String locFname = "";
         String locLname = "";
         String locSalary = "";
         String locSsnno = "000000000";
-        String locGender = "N";
+        String locGender;
 
         try {
             if (person.getFname() != null || person.getFname() != "") {
@@ -163,22 +196,22 @@ public class MenuDriver {
             if (person.getSsnno() != null || person.getSsnno() != "") {
                 locSsnno = person.getSsnno();
             }
-            if (person.getSsnno() != "M" || person.getSsnno() != "F") {
+            if (person.getGender() != "M" || person.getGender() != "F") {
                 locGender = "N";
             } else {
-                locGender = person.getGender();
+                locGender = String.format("'%s'", person.getGender());
             }
             locSalary = person.getSalary();
 
             stmnt = con.createStatement();
 
-            stmnt.execute(String.format("INSERT INTO PERSON VALUES(%d, %s, %s, %s,%s,'%s');",locID,locFname,locLname,locSsnno,locSalary,locGender));
+            stmnt.executeUpdate(String.format("INSERT INTO PERSON VALUES(%d, '%s', '%s', '%s', '%s','%s');", locID, locFname, locLname, locSsnno, locSalary, locGender));
+
 
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
-
-        return "Success";
+        refreshTable();
 
     }
 
@@ -198,19 +231,6 @@ public class MenuDriver {
 
             rs = stmnt.executeQuery("SELECT * FROM  PERSON");
 
-//            while (rs.next()) {
-//                Person prsn = new Person();
-//                //Get field values for person
-//                prsn.setFname(rs.getString("fname"));
-//                prsn.setLname(rs.getString("lname"));
-//                prsn.setSsnno(rs.getString("ssnno"));
-//                prsn.setSalary(rs.getString("salary"));
-//                prsn.setGender(rs.getString("gender"));
-//                //Add person to list
-//                personList.add(prsn);
-//
-//            }
-
         } catch (Exception se) {
             //Handle errors for JDBC
             se.printStackTrace();
@@ -219,9 +239,8 @@ public class MenuDriver {
 
     }
 
-    public static String update(Person updatePerson) {
+    public static void update(Person updatePerson) throws SQLException {
         //invoke connection for local use
-        ResultSet rs;
         Connection con = null;
         Statement stmnt = null;
 
@@ -231,13 +250,11 @@ public class MenuDriver {
             //initialize the database if empty
             stmnt = con.createStatement();
 
-            String personString = String.format("fname = %s, lname = %s, salary = %s, gender = %s", updatePerson.getFname(), updatePerson.getLname(), updatePerson.getSalary(), updatePerson.getGender());
-            rs = stmnt.executeQuery(String.format("UPDATE %s SET %s WHERE ssnno = %s", "test", personString, updatePerson.getSsnno()));
+            String personString = String.format("fname = '%s', lname = '%s', salary = '%s', ssnno = '%s', gender = '%s'", updatePerson.getFname(), updatePerson.getLname(), updatePerson.getSalary(), updatePerson.getSsnno(), updatePerson.getGender());
+            stmnt.executeUpdate(String.format("UPDATE PERSON SET %s WHERE ID = %d", personString, selectedID));
 
-            //rs.close();
 
-        } catch (
-                Exception se) {
+        } catch (Exception se) {
             //Handle errors for JDBC
             se.printStackTrace();
         } finally {
@@ -254,7 +271,7 @@ public class MenuDriver {
                 se.printStackTrace();
             }
         }
-        return "Person successfully updated";
+        refreshTable();
     }
 
     public static String delete(Person person, Connection con) {

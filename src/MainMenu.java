@@ -124,9 +124,9 @@ public class MainMenu {
     public JTable FillTable(JTable table) {
         try {
 
-
-            String[] tableColumnsName = {"ID", "fname", "lname", "ssnno", "salary", "gender"};
+            String[] tableColumnsName = {"ID", "fname", "lname", "salary", "ssnno", "gender"};
             DefaultTableModel aModel = (DefaultTableModel) table.getModel();
+//            getPersonTable().setVisible(false);
             aModel.setColumnIdentifiers(tableColumnsName);
 
             Connection conn = MenuDriver.invokeConnection();
