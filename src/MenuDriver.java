@@ -2,12 +2,8 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.sql.*;
-import java.util.List;
 import java.util.Random;
-import java.util.Vector;
 
 public class MenuDriver {
 
@@ -21,65 +17,47 @@ public class MenuDriver {
     public static void run(String[] args) throws Exception {
 
         init();
-        refreshTable();
+
         JFrame frame = new JFrame("MainMenu");
 
         mainMenu.getPersonTable().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent event) {
                 if (mainMenu.getPersonTable() != null && mainMenu.getPersonTable().getModel().getRowCount() > 0) {
                     JTable table = mainMenu.getPersonTable();
-                    selectedID = (int) table.getValueAt(table.getSelectedRow(),0);
+                    selectedID = (int) table.getValueAt(table.getSelectedRow(), 0);
                     mainMenu.getFname().setText(table.getValueAt(table.getSelectedRow(), 1).toString());
                     mainMenu.getLname().setText(table.getValueAt(table.getSelectedRow(), 2).toString());
-                    mainMenu.getSsnno().setText(table.getValueAt(table.getSelectedRow(), 3).toString());
-                    mainMenu.getSalary().setText(table.getValueAt(table.getSelectedRow(), 4).toString());
+                    mainMenu.getSalary().setText(table.getValueAt(table.getSelectedRow(), 3).toString());
+                    mainMenu.getSsnno().setText(table.getValueAt(table.getSelectedRow(), 4).toString());
                     mainMenu.getGender().setText(table.getValueAt(table.getSelectedRow(), 5).toString());
-
-
+                    System.out.println(table.getValueAt(table.getSelectedRow(), 5).toString());
                 }
             }
         });
-        mainMenu.getSaveButton().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
 
-                String fname = mainMenu.getFname().getText();
-                String lname = mainMenu.getLname().getText();
-                String ssnno = mainMenu.getSsnno().getText();
-                String salary = mainMenu.getSalary().getText();
-                String gender = mainMenu.getGender().getText();
-
-                Person locPerson = new Person(gender, salary, ssnno, lname, fname);
-                System.out.println("Creating new person" + locPerson);
-                try {
-                    create(locPerson, invokeConnection());
-                } catch (SQLException throwables) {
-                    System.out.println(throwables);
-                }
+        mainMenu.getSaveButton().addActionListener(e -> {
+            try {
+                create(new Person(mainMenu.getGender().getText(), mainMenu.getSalary().getText(), mainMenu.getSsnno().getText(), mainMenu.getLname().getText(), mainMenu.getFname().getText()), invokeConnection());
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
             }
-            //your actions
         });
-        mainMenu.getUpdateButton().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
 
-                String fname = mainMenu.getFname().getText();
-                String lname = mainMenu.getLname().getText();
-                String ssnno = mainMenu.getSsnno().getText();
-                String salary = mainMenu.getSalary().getText();
-                String gender = mainMenu.getGender().getText();
+        mainMenu.getUpdateButton().addActionListener(e -> {
 
-                Person locPerson = new Person(gender, salary, ssnno, lname, fname);
-                System.out.println("Updating person " + locPerson);
-                try {
-                    update(locPerson);
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
-                }
+            try {
+                update(new Person(mainMenu.getGender().getText(), mainMenu.getSalary().getText(), mainMenu.getSsnno().getText(), mainMenu.getLname().getText(), mainMenu.getFname().getText()));
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
             }
-
-
-            //your actions
+        });
+        //your actions
+        mainMenu.getDeleteButton().addActionListener(e -> {
+            try {
+                delete();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
         });
         frame.setContentPane(mainMenu.UIView);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -90,19 +68,17 @@ public class MenuDriver {
     }
 
 
-    private static void refreshTable() throws SQLException {
-
-        DefaultTableModel model = (DefaultTableModel) mainMenu.getPersonTable().getModel();
+    private static void refreshTable() {
+        DefaultTableModel model;
+        model = (DefaultTableModel) mainMenu.getPersonTable().getModel();
         model.setRowCount(0);
-        JTable newTable;
         JTable locTable = mainMenu.getPersonTable();
         locTable = mainMenu.FillTable(locTable);
         mainMenu.setPersonTable(locTable);
 
-        ResultSet rs = readAll();
     }
 
-    public static java.sql.Connection invokeConnection() throws SQLException {
+    public static java.sql.Connection invokeConnection() {
 
         try {
             Class.forName("com.mysql.jdbc.Driver");
@@ -118,7 +94,6 @@ public class MenuDriver {
     }
 
     public static void init() {
-
 
         //invoke connection for local use
         DatabaseMetaData dbmeta;
@@ -155,7 +130,8 @@ public class MenuDriver {
                 if (stmnt != null)
                     con.close();
             } catch (SQLException se) {
-            }// do nothing
+                se.printStackTrace();
+            }
             try {
                 if (con != null)
                     con.close();
@@ -164,64 +140,44 @@ public class MenuDriver {
             }
         }
 
+        refreshTable();
+
         System.out.println(String.format("initialized db with %s ", populateTableStatement));
     }
 
 
     public static void create(Person person, Connection con) throws SQLException {
 
-        Statement stmnt = null;
-        Random rand = new Random(); //instance of random class
+        Statement stmnt;
+        Random rand = new Random();
 
         int locID = rand.nextInt(101);
-        String locFname = "";
-        String locLname = "";
-        String locSalary = "";
-        String locSsnno = "000000000";
-        String locGender;
+        String locFname = person.getFname();
+        String locLname = person.getLname();
+        String locSalary;
+        String locSsnno = person.getSsnno();
+        String locGender = person.getGender();
+
+        if (!locGender.equals("M") && !locGender.equals("F")) {
+            locGender = "N";
+        }
+        locSalary = person.getSalary();
 
         try {
-            if (person.getFname() != null || person.getFname() != "") {
-                locFname = person.getFname();
-
-            } else {
-                locFname = "null";
-            }
-            if (person.getLname() != null || person.getLname() != "") {
-                locLname = person.getLname();
-
-            } else {
-                locLname = "null";
-            }
-            if (person.getSsnno() != null || person.getSsnno() != "") {
-                locSsnno = person.getSsnno();
-            }
-            if (person.getGender() != "M" || person.getGender() != "F") {
-                locGender = "N";
-            } else {
-                locGender = String.format("'%s'", person.getGender());
-            }
-            locSalary = person.getSalary();
-
             stmnt = con.createStatement();
-
-            stmnt.executeUpdate(String.format("INSERT INTO PERSON VALUES(%d, '%s', '%s', '%s', '%s','%s');", locID, locFname, locLname, locSsnno, locSalary, locGender));
-
+            stmnt.executeUpdate(String.format("INSERT INTO PERSON VALUES(%d, '%s', '%s', '%s', '%s','%s');", locID, locFname, locLname, locSalary, locSsnno, locGender));
 
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
         refreshTable();
-
     }
 
     public static ResultSet readAll() {
         //invoke connection for local use
-        DatabaseMetaData dbmeta;
         ResultSet rs = null;
-        Connection con = null;
-        Statement stmnt = null;
-        List<Person> personList = null;
+        Connection con;
+        Statement stmnt;
 
         try {
             con = invokeConnection();
@@ -274,35 +230,39 @@ public class MenuDriver {
         refreshTable();
     }
 
-    public static String delete(Person person, Connection con) {
-        return "";
-    }
+    public static void delete() throws SQLException {
+        //invoke connection for local use
+        Connection con = null;
+        Statement stmnt = null;
 
-    public static DefaultTableModel buildTableModel(ResultSet rs)
-            throws SQLException {
+        try {
+            con = invokeConnection();
 
-        ResultSetMetaData metaData = rs.getMetaData();
+            //initialize the database if empty
+            stmnt = con.createStatement();
 
-        // names of columns
-        Vector<String> columnNames = new Vector<String>();
-        int columnCount = metaData.getColumnCount();
-        for (int column = 1; column <= columnCount; column++) {
-            columnNames.add(metaData.getColumnName(column));
-        }
+            stmnt.executeUpdate(String.format("DELETE FROM PERSON WHERE ID = %d", selectedID));
 
-        // data of the table
-        Vector<Vector<Object>> data = new Vector<Vector<Object>>();
-        while (rs.next()) {
-            Vector<Object> vector = new Vector<Object>();
-            for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
-                vector.add(rs.getObject(columnIndex));
+
+        } catch (Exception se) {
+            //Handle errors for JDBC
+            se.printStackTrace();
+        } finally {
+            //close off
+            try {
+                if (stmnt != null)
+                    con.close();
+            } catch (SQLException se) {
+            }// do nothing
+            try {
+                if (con != null)
+                    con.close();
+            } catch (SQLException se) {
+                se.printStackTrace();
             }
-            data.add(vector);
         }
-
-        return new DefaultTableModel(data, columnNames);
+        refreshTable();
     }
-
 
 }
 
