@@ -7,6 +7,47 @@ import java.sql.Statement;
 
 public class MainMenu {
     public JPanel UIView;
+
+    public JTextField getSsnno() {
+        return ssnno;
+    }
+
+    public void setSsnno(JTextField ssnno) {
+        this.ssnno = ssnno;
+    }
+
+    public JTextField getGender() {
+        return gender;
+    }
+
+    public void setGender(JTextField gender) {
+        this.gender = gender;
+    }
+
+    public JTextField getSalary() {
+        return salary;
+    }
+
+    public void setSalary(JTextField salary) {
+        this.salary = salary;
+    }
+
+    public JTextField getLname() {
+        return lname;
+    }
+
+    public void setLname(JTextField lname) {
+        this.lname = lname;
+    }
+
+    public JTextField getFname() {
+        return fname;
+    }
+
+    public void setFname(JTextField fname) {
+        this.fname = fname;
+    }
+
     private JTextField ssnno;
     private JTextField gender;
     private JTextField salary;
@@ -14,6 +55,31 @@ public class MainMenu {
     private JTextField fname;
     private JButton saveButton;
     private JButton updateButton;
+
+    public JButton getSaveButton() {
+        return saveButton;
+    }
+
+    public void setSaveButton(JButton saveButton) {
+        this.saveButton = saveButton;
+    }
+
+    public JButton getUpdateButton() {
+        return updateButton;
+    }
+
+    public void setUpdateButton(JButton updateButton) {
+        this.updateButton = updateButton;
+    }
+
+    public JButton getDeleteButton() {
+        return deleteButton;
+    }
+
+    public void setDeleteButton(JButton deleteButton) {
+        this.deleteButton = deleteButton;
+    }
+
     private JButton deleteButton;
     public JTable personTable;
 
@@ -59,7 +125,7 @@ public class MainMenu {
         try {
 
 
-            String[] tableColumnsName = {"fname", "lname", "ssnno", "salary", "gender"};
+            String[] tableColumnsName = {"ID", "fname", "lname", "ssnno", "salary", "gender"};
             DefaultTableModel aModel = (DefaultTableModel) table.getModel();
             aModel.setColumnIdentifiers(tableColumnsName);
 

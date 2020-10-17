@@ -5,6 +5,14 @@ public class Person {
     private String lname;
     private String fname;
 
+    public Person(String gender, String salary, String ssnno, String lname, String fname) {
+        this.gender = gender;
+        this.salary = salary;
+        this.ssnno = ssnno;
+        this.lname = lname;
+        this.fname = fname;
+    }
+
     public String getGender() {
         return gender;
     }
@@ -13,8 +21,8 @@ public class Person {
         this.gender = gender;
     }
 
-    public int getSalary() {
-        return Integer.parseInt(salary);
+    public String getSalary() {
+        return salary;
     }
 
     public void setSalary(final String salary) {

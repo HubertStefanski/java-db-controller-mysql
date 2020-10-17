@@ -1,7 +1,10 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.sql.*;
 import java.util.List;
+import java.util.Random;
 import java.util.Vector;
 
 public class MenuDriver {
@@ -16,11 +19,34 @@ public class MenuDriver {
 
     public static void run(String[] args) throws Exception {
 
-//        init();
+        init();
+        refreshTable();
         JFrame frame = new JFrame("MainMenu");
-        JTable locTable = mainMenu.getPersonTable();
-        locTable = mainMenu.FillTable(locTable);
-        mainMenu.setPersonTable(locTable);
+
+
+
+
+        mainMenu.getSaveButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                String fname = mainMenu.getFname().getText();
+                String lname = mainMenu.getLname().getText();
+                String ssnno = mainMenu.getSsnno().getText();
+                String salary = mainMenu.getSalary().getText();
+                String gender = mainMenu.getGender().getText();
+
+                Person locPerson = new Person(fname, lname, ssnno, salary, gender);
+                System.out.println("Creating new person" + locPerson);
+                try {
+                    create(locPerson, invokeConnection());
+                } catch (SQLException throwables) {
+                    System.out.println(throwables);
+                }
+            }
+            //your actions
+        });
+        mainMenu.getSaveButton();
         frame.setContentPane(mainMenu.UIView);
 //        mainMenu.FillTable(mainMenu.getPersonTable());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -31,8 +57,11 @@ public class MenuDriver {
     }
 
 
-    private JTable refreshTable() throws SQLException {
+    private static JTable refreshTable() throws SQLException {
         JTable newTable;
+        JTable locTable = mainMenu.getPersonTable();
+        locTable = mainMenu.FillTable(locTable);
+        mainMenu.setPersonTable(locTable);
 
         ResultSet rs = readAll();
         newTable = new JTable(buildTableModel(rs));
@@ -109,11 +138,12 @@ public class MenuDriver {
     public static String create(Person person, Connection con) {
 
         Statement stmnt = null;
+        Random rand = new Random(); //instance of random class
 
-        int locID = 0;
+        int locID = rand.nextInt();
         String locFname = "";
         String locLname = "";
-        int locSalary = 0;
+        String locSalary = "";
         String locSsnno = "000000000";
         String locGender = "N";
 
@@ -133,17 +163,16 @@ public class MenuDriver {
             if (person.getSsnno() != null || person.getSsnno() != "") {
                 locSsnno = person.getSsnno();
             }
-            if (person.getSsnno() != "N") {
+            if (person.getSsnno() != "M" || person.getSsnno() != "F") {
+                locGender = "N";
+            } else {
                 locGender = person.getGender();
             }
             locSalary = person.getSalary();
 
-            locID = (int) Math.random();
-
-
             stmnt = con.createStatement();
 
-            stmnt.executeUpdate(String.format("INSERT INTO PERSON VALUES(%s, %s, %s, %s,%s, %s);", locID, locFname, locLname, locSalary, locSsnno, locGender));
+            stmnt.execute(String.format("INSERT INTO PERSON VALUES(%d, %s, %s, %s,%s,'%s');",locID,locFname,locLname,locSsnno,locSalary,locGender));
 
         } catch (SQLException throwables) {
             throwables.printStackTrace();
