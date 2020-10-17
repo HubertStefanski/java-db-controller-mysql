@@ -5,7 +5,7 @@ public class Main {
     public static void main(String[] args) throws SQLException {
 
         try {
-            MenuDriver.run(args);
+            MenuDriver.run();
         } catch (Exception e) {
             e.printStackTrace();
         }

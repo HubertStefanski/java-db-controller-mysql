@@ -1,6 +1,4 @@
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.sql.*;
 import java.util.Random;
@@ -8,57 +6,33 @@ import java.util.Random;
 public class MenuDriver {
 
     private static int selectedID = Integer.MAX_VALUE;
-    private static String connectionUrl = "jdbc:mysql://localhost:3306/test";
-    private static String createTableStatement = "CREATE TABLE PERSON(id INTEGER not NULL,fname VARCHAR(255),lname VARCHAR(255),salary INTEGER,ssnno VARCHAR(255),gender VARCHAR(255),PRIMARY KEY ( id ))";
-    private static String populateTableStatement = "INSERT INTO PERSON VALUES(1, 'Ada', 'Kelly', 30000,'123456789','M');";
-    private static MainMenu mainMenu = new MainMenu();
+    private static final MainMenu mainMenu = new MainMenu();
 
 
-    public static void run(String[] args) throws Exception {
+    public static void run() {
 
         init();
 
         JFrame frame = new JFrame("MainMenu");
 
-        mainMenu.getPersonTable().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent event) {
-                if (mainMenu.getPersonTable() != null && mainMenu.getPersonTable().getModel().getRowCount() > 0) {
-                    JTable table = mainMenu.getPersonTable();
-                    selectedID = (int) table.getValueAt(table.getSelectedRow(), 0);
-                    mainMenu.getFname().setText(table.getValueAt(table.getSelectedRow(), 1).toString());
-                    mainMenu.getLname().setText(table.getValueAt(table.getSelectedRow(), 2).toString());
-                    mainMenu.getSalary().setText(table.getValueAt(table.getSelectedRow(), 3).toString());
-                    mainMenu.getSsnno().setText(table.getValueAt(table.getSelectedRow(), 4).toString());
-                    mainMenu.getGender().setText(table.getValueAt(table.getSelectedRow(), 5).toString());
-                    System.out.println(table.getValueAt(table.getSelectedRow(), 5).toString());
-                }
+        mainMenu.getPersonTable().getSelectionModel().addListSelectionListener(event -> {
+            if (mainMenu.getPersonTable() != null && mainMenu.getPersonTable().getModel().getRowCount() > 0) {
+                JTable table = mainMenu.getPersonTable();
+                selectedID = (int) table.getValueAt(table.getSelectedRow(), 0);
+                mainMenu.getFname().setText(table.getValueAt(table.getSelectedRow(), 1).toString());
+                mainMenu.getLname().setText(table.getValueAt(table.getSelectedRow(), 2).toString());
+                mainMenu.getSalary().setText(table.getValueAt(table.getSelectedRow(), 3).toString());
+                mainMenu.getSsnno().setText(table.getValueAt(table.getSelectedRow(), 4).toString());
+                mainMenu.getGender().setText(table.getValueAt(table.getSelectedRow(), 5).toString());
             }
         });
 
-        mainMenu.getSaveButton().addActionListener(e -> {
-            try {
-                create(new Person(mainMenu.getGender().getText(), mainMenu.getSalary().getText(), mainMenu.getSsnno().getText(), mainMenu.getLname().getText(), mainMenu.getFname().getText()), invokeConnection());
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
-        });
+        mainMenu.getSaveButton().addActionListener(e -> create(new Person(mainMenu.getGender().getText(), mainMenu.getSalary().getText(), mainMenu.getSsnno().getText(), mainMenu.getLname().getText(), mainMenu.getFname().getText()), invokeConnection()));
 
-        mainMenu.getUpdateButton().addActionListener(e -> {
+        mainMenu.getUpdateButton().addActionListener(e -> update(new Person(mainMenu.getGender().getText(), mainMenu.getSalary().getText(), mainMenu.getSsnno().getText(), mainMenu.getLname().getText(), mainMenu.getFname().getText())));
 
-            try {
-                update(new Person(mainMenu.getGender().getText(), mainMenu.getSalary().getText(), mainMenu.getSsnno().getText(), mainMenu.getLname().getText(), mainMenu.getFname().getText()));
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
-        });
-        //your actions
-        mainMenu.getDeleteButton().addActionListener(e -> {
-            try {
-                delete();
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
-        });
+        mainMenu.getDeleteButton().addActionListener(e -> delete());
+
         frame.setContentPane(mainMenu.UIView);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
@@ -82,8 +56,8 @@ public class MenuDriver {
 
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            Connection con = DriverManager.getConnection(connectionUrl, "root", "");
-            return con;
+            String connectionUrl = "jdbc:mysql://localhost:3306/test";
+            return DriverManager.getConnection(connectionUrl, "root", "");
 
         } catch (Exception e) {
             System.out.println("caught exception " + e);
@@ -104,22 +78,21 @@ public class MenuDriver {
         try {
             con = invokeConnection();
 
+
+            assert con != null;
             dbmeta = con.getMetaData();
 
-//            System.out.println("got to meta data");
-
             rs = dbmeta.getTables(null, null, "PERSON", null);
+
             //initialize the database if empty
             stmnt = con.createStatement();
             if (!rs.next()) {
-
                 //create the table if none exists
-                stmnt.executeUpdate(createTableStatement);
+                stmnt.executeUpdate("CREATE TABLE PERSON(id INTEGER not NULL,fname VARCHAR(255),lname VARCHAR(255),salary INTEGER,ssnno VARCHAR(255),gender VARCHAR(255),PRIMARY KEY ( id ));");
 
                 //populate the table with data
-                stmnt.executeUpdate(populateTableStatement);
+                stmnt.executeUpdate("INSERT INTO PERSON VALUES(1, 'Ada', 'Kelly', 30000,'123456789','M');");
             }
-
         } catch (
                 Exception se) {
             //Handle errors for JDBC
@@ -139,14 +112,11 @@ public class MenuDriver {
                 se.printStackTrace();
             }
         }
-
         refreshTable();
-
-        System.out.println(String.format("initialized db with %s ", populateTableStatement));
     }
 
 
-    public static void create(Person person, Connection con) throws SQLException {
+    public static void create(Person person, Connection con) {
 
         Statement stmnt;
         Random rand = new Random();
@@ -173,29 +143,7 @@ public class MenuDriver {
         refreshTable();
     }
 
-    public static ResultSet readAll() {
-        //invoke connection for local use
-        ResultSet rs = null;
-        Connection con;
-        Statement stmnt;
-
-        try {
-            con = invokeConnection();
-
-            //initialize the database if empty
-            stmnt = con.createStatement();
-
-            rs = stmnt.executeQuery("SELECT * FROM  PERSON");
-
-        } catch (Exception se) {
-            //Handle errors for JDBC
-            se.printStackTrace();
-        }
-        return rs;
-
-    }
-
-    public static void update(Person updatePerson) throws SQLException {
+    public static void update(Person updatePerson) {
         //invoke connection for local use
         Connection con = null;
         Statement stmnt = null;
@@ -204,6 +152,7 @@ public class MenuDriver {
             con = invokeConnection();
 
             //initialize the database if empty
+            assert con != null;
             stmnt = con.createStatement();
 
             String personString = String.format("fname = '%s', lname = '%s', salary = '%s', ssnno = '%s', gender = '%s'", updatePerson.getFname(), updatePerson.getLname(), updatePerson.getSalary(), updatePerson.getSsnno(), updatePerson.getGender());
@@ -219,7 +168,8 @@ public class MenuDriver {
                 if (stmnt != null)
                     con.close();
             } catch (SQLException se) {
-            }// do nothing
+                se.printStackTrace();
+            }
             try {
                 if (con != null)
                     con.close();
@@ -230,7 +180,7 @@ public class MenuDriver {
         refreshTable();
     }
 
-    public static void delete() throws SQLException {
+    public static void delete() {
         //invoke connection for local use
         Connection con = null;
         Statement stmnt = null;
@@ -239,6 +189,7 @@ public class MenuDriver {
             con = invokeConnection();
 
             //initialize the database if empty
+            assert con != null;
             stmnt = con.createStatement();
 
             stmnt.executeUpdate(String.format("DELETE FROM PERSON WHERE ID = %d", selectedID));
@@ -253,7 +204,8 @@ public class MenuDriver {
                 if (stmnt != null)
                     con.close();
             } catch (SQLException se) {
-            }// do nothing
+                se.printStackTrace();
+            }
             try {
                 if (con != null)
                     con.close();
